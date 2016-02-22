@@ -55,13 +55,45 @@
     return nil;
 }
 
++ (BOOL)supportFileURL:(NSURL*)url
+{
+    return [MZResizePhotosManager fileTypeForURL:url] != -1;
+}
+
++ (NSUInteger)fileTypeForURL:(NSURL *)url
+{
+    NSString *fileExt = [url pathExtension].lowercaseString;
+    NSLog(@"%@", fileExt);
+    NSBitmapImageFileType result;
+    if ([fileExt isEqualToString:@"jp2"]) {
+        result = NSJPEG2000FileType;
+    } else if ([fileExt isEqualToString:@"jpeg"] || [fileExt isEqualToString:@"jpg"]) {
+        result = NSJPEGFileType;
+    } else if ([fileExt isEqualToString:@"tiff"]) {
+        result = NSTIFFFileType;
+    } else if ([fileExt isEqualToString:@"bmp"]) {
+        result = NSBMPFileType;
+    } else if ([fileExt isEqualToString:@"gif"]) {
+        result = NSGIFFileType;
+    } else if ([fileExt isEqualToString:@"png"]){
+        result = NSPNGFileType;
+    } else {
+        result = -1;
+    }
+    return result;
+}
+
 - (NSError *)verifyOptions
 {
     NSMutableString *domain = [NSMutableString stringWithString:@"Error:"];
-    if (!self.inputURL && ![self.inputURL isFileURL] && [self fileTypeForURL:self.inputURL] == -1) {
+    if (!self.inputURL &&
+        ![self.inputURL isFileURL] &&
+        [MZResizePhotosManager supportFileURL:self.inputURL]) {
         [domain appendString:@"Wrong Input! "];
     }
-    if (!self.outputURL && ![self.outputURL isFileURL] && [self fileTypeForURL:self.outputURL] == -1) {
+    if (!self.outputURL &&
+        ![self.outputURL isFileURL] &&
+        [MZResizePhotosManager supportFileURL:self.outputURL]) {
         [domain appendString:@"Wrong Output! "];
     }
     if (!self.photosWidth) {
@@ -104,35 +136,12 @@
     return newImage;
 }
 
-- (NSUInteger)fileTypeForURL:(NSURL *)url
-{
-    NSString *fileExt = [url pathExtension].lowercaseString;
-    NSLog(@"%@", fileExt);
-    NSBitmapImageFileType result;
-    if ([fileExt isEqualToString:@"jp2"]) {
-        result = NSJPEG2000FileType;
-    } else if ([fileExt isEqualToString:@"jpeg"] || [fileExt isEqualToString:@"jpg"]) {
-        result = NSJPEGFileType;
-    } else if ([fileExt isEqualToString:@"tiff"]) {
-        result = NSTIFFFileType;
-    } else if ([fileExt isEqualToString:@"bmp"]) {
-        result = NSBMPFileType;
-    } else if ([fileExt isEqualToString:@"gif"]) {
-        result = NSGIFFileType;
-    } else if ([fileExt isEqualToString:@"png"]){
-        result = NSPNGFileType;
-    } else {
-        result = -1;
-    }
-    return result;
-}
-
 - (NSError *)writeImage:(NSImage *)image
 {
     [image lockFocus] ;
     NSBitmapImageRep *imgRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0.0, 0.0, image.size.width, image.size.height)] ;
     [image unlockFocus] ;
-    NSBitmapImageFileType fileType = [self fileTypeForURL:self.outputURL];
+    NSBitmapImageFileType fileType = [MZResizePhotosManager fileTypeForURL:self.outputURL];
     NSData *data = [imgRep representationUsingType:fileType properties:@{}];
     NSError *error;
     BOOL success = [data writeToURL:self.outputURL

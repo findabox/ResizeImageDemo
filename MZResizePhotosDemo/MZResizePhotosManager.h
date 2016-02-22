@@ -15,6 +15,8 @@
 
 @interface MZResizePhotosManager : NSObject
 
++ (BOOL)supportFileURL:(NSURL*)url;
+
 + (NSError *)resizePhotosWithOption:(NSDictionary *)options complete:(void (^)(NSError *error))complete;
 
 @end
